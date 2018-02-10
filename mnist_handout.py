@@ -19,9 +19,18 @@ from scipy.io import loadmat
 M = loadmat("mnist_all.mat")
 
 #Display the 150-th "5" digit from the training set
-imshow(M["train5"][150].reshape((28,28)), cmap=cm.gray)
-show()
+# imshow(M["train5"][150].reshape((28,28)), cmap=cm.gray)
+# show()
 
+def download_num_imgs(M):
+    for key in M:
+        if key in ["__version__","__header__","__globals__"]: # we are only interested in keys containing image data
+            continue
+        for i in range(0,10):
+            num_matrix = M[key][i].reshape((28,28)) # reshape the (174,) vector to a (28,28) matrix
+            filename = key + "_" + str(i) + ".jpg" # want to save the image as a jpg file
+            mpimg.imsave("part1_photos/"+filename, num_matrix, cmap=plt.cm.gray) # save the image
+            
 
 def softmax(y):
     '''Return the output of the softmax function for the matrix of output y. y
@@ -73,3 +82,28 @@ y = argmax(output)
 #fig.colorbar(heatmap, shrink = 0.5, aspect=5)
 #show()
 ################################################################################
+
+def part1():
+
+    print("____________________________________________________________")
+    print "PART1: DOWNLOADING JPGS FROM mnist_all.mat FILE (NO OUTPUT)"
+    print("____________________________________________________________")
+    download_num_imgs(M)
+
+############### RUNNING EACH PART ###############
+#part1()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

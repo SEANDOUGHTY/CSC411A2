@@ -23,6 +23,7 @@ M = loadmat("mnist_all.mat")
 # show()
 
 def download_num_imgs(M):
+    num_imgs = 0
     for key in M:
         if key in ["__version__","__header__","__globals__"]: # we are only interested in keys containing image data
             continue
@@ -30,7 +31,8 @@ def download_num_imgs(M):
             num_matrix = M[key][i].reshape((28,28)) # reshape the (174,) vector to a (28,28) matrix
             filename = key + "_" + str(i) + ".jpg" # want to save the image as a jpg file
             mpimg.imsave("part1_photos/"+filename, num_matrix, cmap=plt.cm.gray) # save the image
-            
+        num_imgs += len(M[key])
+    print(num_imgs)
 
 def softmax(y):
     '''Return the output of the softmax function for the matrix of output y. y
@@ -91,7 +93,7 @@ def part1():
     download_num_imgs(M)
 
 ############### RUNNING EACH PART ###############
-#part1()
+part1()
 
 
 

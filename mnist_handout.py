@@ -34,6 +34,12 @@ def download_num_imgs(M):
         num_imgs += len(M[key])
     print(num_imgs)
 
+def network_compute(x,w,b):
+    o = np.add(np.dot(w,x), b)
+    
+    return o
+
+
 def softmax(y):
     '''Return the output of the softmax function for the matrix of output y. y
     is an NxM matrix where N is the number of outputs for a single case, and M
@@ -92,8 +98,11 @@ def part1():
     print("____________________________________________________________")
     download_num_imgs(M)
 
+
+
+
 ############### RUNNING EACH PART ###############
-part1()
+#part1()
 
 
 

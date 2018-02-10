@@ -1,0 +1,4 @@
+def network_compute(x,w,b):
+    o = np.add(np.dot(w,x), b)
+    
+    return o

@@ -23,16 +23,39 @@ M = loadmat("mnist_all.mat")
 # show()
 
 def download_num_imgs(M):
-    num_imgs = 0
-    for key in M:
+
+    # DOWNLOAD 10 IMAGES OF EACH NUMBER (0-9) FROM THE DATASET
+
+    for key in M: # iterate through all the keys in the dict M with number images
         if key in ["__version__","__header__","__globals__"]: # we are only interested in keys containing image data
             continue
-        for i in range(0,10):
+        
+        num_imgs = []
+        for i in range(0,10): # save and plot 10 example images for each number
             num_matrix = M[key][i].reshape((28,28)) # reshape the (174,) vector to a (28,28) matrix
             filename = key + "_" + str(i) + ".jpg" # want to save the image as a jpg file
-            mpimg.imsave("part1_photos/"+filename, num_matrix, cmap=plt.cm.gray) # save the image
-        num_imgs += len(M[key])
-    print(num_imgs)
+            num_matrix = num_matrix/255.0
+            mpimg.imsave("part1_photos/"+filename, num_matrix, cmap=cm.gray) # save the image
+            num_imgs.append(num_matrix)
+            num_in_img = key[-1] # get the number that the image is of
+        display_imgs(num_imgs, num_in_img)
+
+def display_imgs(num_imgs, num_in_img):
+
+    # PLOT 10 IMGS OF THE SAME NUMBER
+
+    fig, ((ax1, ax2, ax3, ax4, ax5), (ax6, ax7, ax8, ax9, ax10)) = plt.subplots(2, 5)
+    axes = ((ax1, ax2, ax3, ax4, ax5), (ax6, ax7, ax8, ax9, ax10))
+    i = 0
+    j = 0
+    for img in num_imgs:
+        axes[i][j].imshow(img, cmap=cm.gray, aspect="equal")
+        if j == len(axes[i])-1: # once first row of images is plot, reset the indices
+            i,j = 1,-1
+        j+=1
+    ax3.set_title('10 Example Images of Number {} in the Dataset\n'.format(num_in_img))
+    plt.show()
+
 
 def network_compute(x,w,b):
     o = np.add(np.dot(w,x), b)

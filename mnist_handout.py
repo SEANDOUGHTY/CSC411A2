@@ -9,6 +9,7 @@ import matplotlib.image as mpimg
 from scipy.ndimage import filters
 import urllib
 from numpy import random
+import copy
 
 import cPickle
 
@@ -30,6 +31,7 @@ def make_set(M, typ, size=-1):
 
     new_setx = np.zeros(shape=(1,785)) #784 pixels + a 1 for the bias
     new_sety = np.zeros(shape=(1,10)) #10 possible out puts
+    arraysize = copy.deepcopy(size)
 
     for key in M:
         if key in ["__version__","__header__","__globals__"]: # we are only interested in keys containing image data
@@ -37,15 +39,15 @@ def make_set(M, typ, size=-1):
         if typ not in key:  #only interest in train or test
             continue
         if size == -1: #if no size parameter then use the full training set
-            size = len(M[key])-1        
+            arraysize = len(M[key])-1        
 
         print('Making ' + typ + ' set:' + str(key))    
         number = int(key[-1])
-        for i in range(size):
+        for i in range(arraysize):
             num_matrix = M[key][i].reshape((28,28)) # reshape the (174,) vector to a (28,28) matrix
             num_matrix = num_matrix/255.0
             if i % 100 == 0:
-                print(str(float(i)/float(size)*100) + '%')
+                print(str(float(i)/float(arraysize)*100) + '%')
 
             k = 0
             for i in num_matrix: #converting to a vector
@@ -93,7 +95,9 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations):
     max_iter = iterations 
     iter  = 0
     last_grad = 0
+
     while norm(t - prev_t) >  EPS and iter < max_iter:
+
         prev_t = t.copy()
 
         p = network_compute(x,t)
@@ -129,6 +133,8 @@ def check_results(x,y,w):
             continue
         incorrect += 1
 
+    if (incorrect + correct) == 0:
+        return 0
     return float(correct)/float((incorrect+correct))*100
 
 
@@ -170,6 +176,7 @@ def display_imgs(num_imgs, num_in_img):
 def network_compute(x,w):
     o = np.dot(w,x.transpose())
     p = softmax(o)
+    #p = tanh(dot(w,x.transpose()))
     return p
 
 
@@ -178,6 +185,7 @@ def softmax(y):
     '''Return the output of the softmax function for the matrix of output y. y
     is an NxM matrix where N is the number of outputs for a single case, and M
     is the number of cases'''
+
     return exp(y)/tile(sum(exp(y),0), (len(y),1))
     
 def tanh_layer(y, W, b):    
@@ -238,7 +246,7 @@ def part4():
     w = initalize_weights()
 
         
-    alpha = 0.01
+    alpha = 0.001
     iterations = 10000        
     momentum = 0
     t = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, momentum, iterations)
@@ -249,11 +257,11 @@ def part4():
     print(str(result)+'%')
 
 def part5():
-    train_set = make_set(M, 'train') #building the training and test sets
+    train_set = make_set(M, 'train',100) #building the training and test sets
     test_set = make_set(M, 'test', 10)
     w = initalize_weights()
         
-    alpha = 0.01
+    alpha = 0.00001
     iterations = 10000        
     momentum = 0.99
     t = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, momentum, iterations)

@@ -2,11 +2,11 @@ from pylab import *
 import numpy as np
 from torch.autograd import Variable
 import torch
-import matplotlib
+# import matplotlib
 # matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.io import loadmat
-import matplotlib.cbook as cbook
+# import matplotlib.cbook as cbook
 import random
 import time
 from scipy.misc import imread
@@ -103,7 +103,6 @@ def crop_gray_resize_jpgs(filename, crop_dimensions, actor_name):
     # filename is a string filename of the image being cropped
     # crop_dimensions is a tuple of the (x,y) coordinates to crop the image at
     # actor_name is a string of the actor's last name
-
 
     img_matrix = imread("uncropped/"+filename)
 
@@ -298,93 +297,137 @@ def part1():
     download_jpgs_from_txt("subset_actors.txt")
 
 def part2():
-    print("_________________________________________________________")
-    print("PART2: PARTIONIONING ACTORS INFO INTO SETS (NO OUTPUT)")
-    print("_________________________________________________________")
-    actors = ["Bracco", "Gilpin", "Harmon", "Baldwin", "Hader", "Carell"]
-    training_set, validation_set, test_set = create_sets("cropped_rgb/", actors)
+	print("_________________________________________________________")
+	print("PART2: PARTIONIONING ACTORS INFO INTO SETS (NO OUTPUT)")
+	print("_________________________________________________________")
+	actors = ["Bracco", "Gilpin", "Harmon", "Baldwin", "Hader", "Carell"]
+	training_set, validation_set, test_set = create_sets("cropped_rgb/", actors)
 
-    train_x, train_y = get_x_and_y_data(training_set)
-    test_x, test_y = get_x_and_y_data(test_set)
+	train_x, train_y = get_x_and_y_data(training_set)
+	test_x, test_y = get_x_and_y_data(test_set)
+	val_x, val_y = get_x_and_y_data(validation_set)
 
-    # print("Shape of train_x, train_y: ", train_x.shape, train_y.shape)
-    # print("Shape of test_x, test_y: ", test_x.shape, test_y.shape)
+	# print("Shape of train_x, train_y: ", train_x.shape, train_y.shape)
+	# print("Shape of test_x, test_y: ", test_x.shape, test_y.shape)
 
-    dim_x = 32*32 + 1 # CHANGED THIS
-    dim_h = 20
-    dim_out = 6 # CHANGED THIS
+	dim_x = 32*32 + 1 # CHANGED THIS
+	dim_h = 45	# 35
+	dim_out = 6 # CHANGED THIS
 
-    dtype_float = torch.FloatTensor
-    dtype_long = torch.LongTensor
+	dtype_float = torch.FloatTensor
+	dtype_long = torch.LongTensor
 
 	################################################################################
 	#Subsample the training set for faster training
-    train_idx = np.random.permutation(range(train_x.shape[0]))[:55] # CHANGED THIS FROM 1000
-    x = Variable(torch.from_numpy(train_x[train_idx]), requires_grad=False).type(dtype_float)
-    y_classes = Variable(torch.from_numpy(np.argmax(train_y[train_idx], 1)), requires_grad=False).type(dtype_long)
+	def subsample():
+		train_idx = np.random.permutation(range(train_x.shape[0]))[:32] # CHANGED THIS FROM 1000
+		x = Variable(torch.from_numpy(train_x[train_idx]), requires_grad=False).type(dtype_float)
+		y_classes = Variable(torch.from_numpy(np.argmax(train_y[train_idx], 1)), requires_grad=False).type(dtype_long)
+		return x, y_classes
 	#################################################################################
 
-    # DEFINE THE NEURAL NETWORK
-    model = torch.nn.Sequential(torch.nn.Linear(dim_x, dim_h),torch.nn.ReLU(),torch.nn.Linear(dim_h, dim_out),)
+	# DEFINE THE NEURAL NETWORK
+	model = torch.nn.Sequential(torch.nn.Linear(dim_x, dim_h),torch.nn.ReLU(),torch.nn.Linear(dim_h, dim_out),)
 
-    # INITIALIZE WEIGHTS
-    def init_weights(m):
-    	# print(m)
-    	if type(m) == torch.nn.Linear:
-    		m.weight.data.fill_(0.01)
+	# INITIALIZE WEIGHTS
+	def init_weights(m):
+		if type(m) == torch.nn.Linear:
+			m.weight.data.fill_(0.0001)
 
-    def test_model(x_set, y_set):
-    	# MAKE PREDICTIONS FOR THE SET DATA
-    	x = Variable(torch.from_numpy(x_set), requires_grad=False).type(dtype_float)
-    	y_pred = model(x).data.numpy()
+	def test_model(x_set, y_set):
+		# MAKE PREDICTIONS FOR THE SET DATA
+		# model.eval() # added as advised on piazza
+		x = Variable(torch.from_numpy(x_set), requires_grad=False).type(dtype_float)
+		y_pred = model(x).data.numpy()
 
-    	# LOOK AT THE PERFORMANCE
-    	accuracy = np.mean(np.argmax(y_pred, 1) == np.argmax(train_y, 1))
-    	return accuracy
+		# LOOK AT THE PERFORMANCE
+		accuracy = np.mean(np.argmax(y_pred, 1) == np.argmax(y_set, 1))
+		return accuracy
 
-    model = torch.nn.Sequential(torch.nn.Linear(dim_x, dim_h),torch.nn.ReLU(),torch.nn.Linear(dim_h, dim_out),)
-    model.apply(init_weights)
+	# model = torch.nn.Sequential(torch.nn.Linear(dim_x, dim_h),torch.nn.ReLU(),torch.nn.Linear(dim_h, dim_out),)
+	model.apply(init_weights)
+	torch.manual_seed(0)
 
-    # DEFINE A LOSS FUNCTION
-    loss_fn = torch.nn.CrossEntropyLoss()
+	# DEFINE A LOSS FUNCTION
+	loss_fn = torch.nn.CrossEntropyLoss()
 
-    # TRAIN THE MODEL USING ADAM, A VARIANT OF GRADIENT DESCENT
-    learning_rate = 0.01 #1e-2
+	# TRAIN THE MODEL USING ADAM, A VARIANT OF GRADIENT DESCENT
+	learning_rate = 0.0001 #0.001
 
-    # CHOOSE AN OPTIMIZER
-    # optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    iterations = 10000
+	# CHOOSE AN OPTIMIZER
+	# optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9)
 
-    loss_data = [[],[]]
-    for t in range(iterations): # MIGHT NEED TO CHANGE THIS FROM 1000 to 120 (10000 originally)
-        y_pred = model(x)
-        loss = loss_fn(y_pred, y_classes)
-        model.zero_grad()  # Zero out the previous gradient computation
-        loss.backward()    # Compute the gradient
-        optimizer.step()   # Use the gradient information to 
-                           # make a step                        
-        if t%500 == 0:
-        	print("Optimization is {}% complete.".format(100*t/iterations))
-        	print("Accuracy: {}".format(test_model(train_x,train_y)))
-        	started = True
-       	if t%100 == 0:
-	       	loss_data[0].append(t)
-	       	loss_data[1].append(float(loss))
+	def train_and_test(train_x,train_y,val_x,val_y,test_x,test_y):
+		# CHOOSE AN OPTIMIZER
+		# optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9)
+	    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+	    iterations = 12000
+	    loss_data = [[],[]]
+	    accuracy_data = {"train_set": [[],[]], "val_set": [[],[]], "test_set": [[],[]]}
 
-    if started: print("Optimization is 100% complete.")
+	    for t in range(iterations): # MIGHT NEED TO CHANGE THIS FROM 1000 to 120 (10000 originally)
+	        x, y_classes = subsample()
+	        y_pred = model(x)
+	        loss = loss_fn(y_pred, y_classes)
+	        model.zero_grad()  # Zero out the previous gradient computation
+	        loss.backward()    # Compute the gradient
+	        optimizer.step()   # Use the gradient information to make a step   
 
-    def plot_loss_vs_iterations(loss_data):
-        # plt.yscale('log')
-        plt.title("Loss vs. Iterations")
-        plt.xlabel('Iterations')
-        plt.ylabel('Loss')
-        plt.plot(loss_data[0], loss_data[1], '-b', label="Loss")
-        plt.legend(loc='best')
-        plt.show()
+	        # PROVIDE UPDATES
+	        if t%500 == 0:
+	            print("Optimization is {}% complete.".format(100*t/iterations))
+	            print("Accuracy for Test Set: {}".format(test_model(test_x,test_y)))
+	            started = True
 
-    # PLOT THE LOSS OVER ITERATIONS
-    # plot_loss_vs_iterations(loss_data)
+	        # COLLECT DATA
+	        if t%50 == 0:
+	           	loss_data[0].append(t)
+	           	loss_data[1].append(float(loss))
+
+	           	# COLLECT TRAINING DATA
+	           	accuracy_data["train_set"][0].append(t)
+	           	accuracy_data["train_set"][1].append(test_model(train_x,train_y))
+
+	           	# COLLECT VALIDATION DATA
+	           	accuracy_data["val_set"][0].append(t)
+	           	accuracy_data["val_set"][1].append(test_model(val_x,val_y))
+
+	           	# COLLECT TEST DATA
+	           	accuracy_data["test_set"][0].append(t)
+	           	accuracy_data["test_set"][1].append(test_model(test_x,test_y))
+
+	    if started: print("Optimization is 100% complete.")
+
+	    return accuracy_data, loss_data
+
+	def plot_loss_vs_iterations(loss_data):
+	    # plt.yscale('log')
+	    plt.title("Model Loss over Epochs")
+	    plt.xlabel('Epochs')
+	    plt.ylabel('Loss')
+	    plt.plot(loss_data[0], loss_data[1], '-b', label="Model Loss")
+	    plt.legend(loc='best')
+	    plt.show()
+
+	def plot_learning_curves(accuracy_data):
+	    # plt.yscale('log')
+	    plt.title("Training, Validation, and Test Set Learning Curves")
+	    plt.xlabel('Epochs')
+	    plt.ylabel('Accuracy')
+	    plt.plot(accuracy_data["train_set"][0], accuracy_data["train_set"][1], '-g', label="Train Set")
+	    plt.plot(accuracy_data["val_set"][0], accuracy_data["val_set"][1], '-b', label="Validation Set")
+	    plt.plot(accuracy_data["test_set"][0], accuracy_data["test_set"][1], '-r', label="Test Set")
+	    plt.legend(loc='best')
+	    plt.show()	
+
+	# TRAIN AND TEST ON ALL SETS
+	accuracy_data, loss_data  = train_and_test(train_x,train_y,val_x,val_y,test_x,test_y)
+
+	# PLOT THE LOSS OVER ITERATIONS
+	plot_loss_vs_iterations(loss_data)
+
+	# PLOT THE LEARNING CURVES
+	plot_learning_curves(accuracy_data)
 
     # # YOU CAN ACCESS THE WEIGHTS LIKE THIS
     # model[0].weight

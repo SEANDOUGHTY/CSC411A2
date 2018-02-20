@@ -85,10 +85,8 @@ def initalize_weights():
     w = 0.5*w
     return w
 
-def f(x,y,w):
-    p = network_compute(x,w)
+def f(x,y,p):
     logp = np.log(p)
-
 
     cost = np.dot(y,logp)
 
@@ -134,6 +132,12 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=5
             testtrack = np.append(testtrack, testresults)
             print ("Training: " + str(trainresults) + "%")
             print ("Testing: " + str(testresults) + "%")
+            #print ("cost" + str(f(x1,y1,p)))
+            print ("gradient1:" + str(df(x,y,p)[625][2]))
+            print ("gradient2:" + str(df(x,y,p)[596][2]))
+            print ("weight1:" + str(t[2][625]))
+            print ("weight2:" + str(t[2][596]))
+            print ("\n")
 
 
             if interupts:
@@ -274,7 +278,7 @@ def part4():
     alpha = 0.00001
     iterations = 100000       
     momentum = 0
-    frequency = 500
+    frequency = 1000
  
     results = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, \
         momentum, iterations, frequency, True)  
@@ -308,12 +312,12 @@ def part5():
 
         
     alpha = 0.00001
-    iterations = 100000        
+    iterations = 100        
     momentum = 0.99
     frequency = 1
  
     results = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, \
-        momentum, iterations, frequency, False)  
+        momentum, iterations, frequency, True)  
     
 
     plt.plot(results[0], results[2], 'b', results[0], results[1], 'g')
@@ -327,41 +331,63 @@ def part6():
     w = np.load('weights.npy')
     x = np.load('test_setx.npy')
     y = np.load('test_sety.npy')
+    item = 371
+    item2 = 443
+    print(w[2][item])
+    print(w[2][item2])
+
+   
+    w1s = np.arange(-3, 3, 0.1)
+    w2s = np.arange(-3, 3, 0.1)
+    w1z, w2z = np.meshgrid(w1s, w2s)    
+    if ((os.path.isfile('test.npy'))):
+        print('Loading Contour Plot Data:')
+        C = np.load('test.npy')
+    else:
+        print('Creating Contour Plot Data:')
+        C = np.zeros([w1s.size, w2s.size])
+        k = 0
+        for i, w1 in enumerate(w1s):
+            for j, w2 in enumerate(w2s):
+                print(k)
+                
+                w[2][item] = w1
+            
+                w[2][item2] = w2
+                p = network_compute(x,w)
+                C[j,i] = f(x,y,p)
+                k += 1
+        np.save('test.npy', C)
+
+    gd_traj = [(-3, 3)]
+    mo_traj = [(-3, 3)]
+    alpha_gd = 0.2
+    alpha_mo = 0.1
+    gamma = 0.1
+    last_grad = 0
+    for i in range(10):
+        w[2][item] = gd_traj[-1][0]
+        w[2][item2] = gd_traj[-1][1]
+        p = network_compute(x,w)
+        grad = alpha_gd*df(x,y,p)
+        gd_traj.append((gd_traj[-1][0] - grad[item][2], gd_traj[-1][1] - grad[item2][2]))
+
+        w[2][item] = mo_traj[-1][0]
+        w[2][item2] = mo_traj[-1][1]
+        p = network_compute(x,w)
+        grad = gamma*last_grad + alpha_mo*df(x,y,p)
+        last_grad = grad
+        mo_traj.append((mo_traj[-1][0] - grad[item][2], mo_traj[-1][1] - grad[item2][2]))
 
 
-    #gd_traj = [(init_w1, init_w2), (step1_w1, step1_w2), ...]
-    #mo_traj = [(init_w1, init_w2), (step1_w1, step1_w2), ...]
-    w1s = np.arange(-0, 1, 0.1)
-    w2s = np.arange(-0, 1, 0.1)
-    w1z, w2z = np.meshgrid(w1s, w2s)
-    C = np.zeros([w1s.size, w2s.size])
-    D = np.zeros([w1s.size, w2s.size])
-    k = 0
-    for i, w1 in enumerate(w1s):
-        for j, w2 in enumerate(w2s):
-            print(str(i) + ':' + str(w1) + ' ' + str(w2))
-            #w[2][625] = w1
-            w[2][596] = w2
-            p = network_compute(x,w)
-            print('grad' +str(df(x,y,p)[596][2]))
-            C[j,i] = f(x,y,w)
-            #C[i,j] = k
-            k += 1
-
-    #C = C - C.mean()
-    #A = np.array([[1,2,3],[4,5,6],[7,8,9]])
-    #np.save('test.npy', C)
-    #C = np.zeros([w1s.size, w2s.size])
-    #C[1,1] =
-    print(C)
-    #CS = plt.contour(w1z, w2z, C, camp=cm.coolwarm)
-    #plt.plot([a for a, b in gd_traj], [b for a,b in gd_traj], 'yo-', label="No Momentum")
-    #plt.plot([a for a, b in mo_traj], [b for a,b in mo_traj], 'go-', label="Momentum")
-    #return 0
-    plt.contour(C)
-    plt.xlim( (0, 3) )
-    plt.ylim( (0, 3) )
-    #plt.legend(loc='top left')
+    CS = plt.contour(w1z, w2z, C, 500, camp=cm.coolwarm)
+    plt.plot([a for a, b in gd_traj], [b for a,b in gd_traj], 'yo-', label="No Momentum")
+    plt.plot([a for a, b in mo_traj], [b for a,b in mo_traj], 'go-', label="Momentum")
+    plt.xlabel('Value of weight 1')
+    plt.ylabel('Value of weight 2')
+    plt.xlim( (0, 1) )
+    plt.ylim( (-1, 0) )
+    plt.legend(loc='top left')
     plt.title('Contour plot')
     plt.show()
     
@@ -379,14 +405,6 @@ def part6():
 #part4visualize()
 #part5()
 part6()
-
-'''
-C = np.load('weights.npy')
-i = 2
-for j in range(len (C[2])):
-    print('number' + str(j) + ':' + str(C[i][j]))
-'''
-
 
 
 

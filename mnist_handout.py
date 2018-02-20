@@ -84,12 +84,29 @@ def initalize_weights():
     w = 0.5*w
     return w
 
+def f(x,y,w):
+    p = network_compute(x,w)
+    logp = np.log(p)
+
+
+    cost = np.dot(y,logp)
+
+    cost = -np.trace(cost)
+    #print(cost)
+    return cost
+
+
 def df(x,y,p):
     #formula x(p-y)
     return np.dot(x.transpose(), np.subtract(p.transpose(),y))
 
-def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations):
+def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=500, interupts=True):
     EPS = 1e-5   #EPS = 10**(-5)
+    itertrack = np.array([])
+    traintrack = np.array([])
+    testtrack = np.array([])
+
+    itercount = np.array([])
     prev_t = init_t-10*EPS
     t = init_t.copy()
     max_iter = iterations 
@@ -104,19 +121,26 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations):
         grad = (alpha*df(x, y, p)).transpose()
         t -= gamma*last_grad + grad
         last_grad = grad
-        if iter % 500 == 0:
+
+
+        if iter % frequency == 0:
             print "Iter", iter
             trainresults = check_results(x,y,t)
             testresults = check_results(x1,y1,t)
+            itertrack = np.append(itertrack, iter)
+            traintrack = np.append(traintrack, trainresults)
+            testtrack = np.append(testtrack, testresults)
             print ("Training: " + str(trainresults) + "%")
             print ("Testing: " + str(testresults) + "%")
 
-            name = raw_input("Continue")
-            if name == "N":
-                break
+            if interupts:
+                name = raw_input("Continue")
+                if name == "N":
+                    break
         iter += 1
     np.save('weights.npy', t)
-    return t
+    return [itertrack, traintrack, testtrack]
+
 
 def check_results(x,y,w):
     '''This is a function that takes in a set of images, their result and the weights
@@ -241,40 +265,124 @@ def part1():
     download_num_imgs(M)
 
 def part4():
-    train_set = make_set(M, 'train',100) #building the training and test sets
-    test_set = make_set(M, 'test', 10)
+    train_set = make_set(M, 'train') #building the training and test sets
+    test_set = make_set(M, 'test')
     w = initalize_weights()
 
-        
-    alpha = 0.001
-    iterations = 10000        
-    momentum = 0
-    t = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, momentum, iterations)
-    t = load('weights.npy')
-    result = check_results(train_set[0],train_set[1],t)
-    print(str(result)+'%')
-    result = check_results(test_set[0],test_set[1],t)
-    print(str(result)+'%')
-
-def part5():
-    train_set = make_set(M, 'train',100) #building the training and test sets
-    test_set = make_set(M, 'test', 10)
-    w = initalize_weights()
         
     alpha = 0.00001
-    iterations = 10000        
+    iterations = 100000       
+    momentum = 0
+    frequency = 500
+ 
+    results = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, \
+        momentum, iterations, frequency, True)  
+    
+    
+    plt.plot(results[0], results[2], 'b', results[0], results[1], 'g')
+    plt.xlabel('Iterations')
+    plt.ylabel('Test Set Accuracy %')
+    plt.show()
+
+    return results
+
+def part4visualize():
+    w = np.load('weights.npy')
+    
+    i = 0
+    for output in w: # save and plot each visualization
+        num_matrix = output[:-1].reshape((28,28)) # reshape the (174,) vector to a (28,28) matrix
+        filename = "visualize" + str(i) + ".png" # want to save the image as a jpg file
+        num_matrix = num_matrix/255.0
+        mpimg.imsave("part4-5photos/"+filename, num_matrix, cmap=cm.gray) # save the image
+        i += 1
+
+def part5():
+    train_set = make_set(M, 'train') #building the training and test sets
+    test_set = make_set(M, 'test')
+    w = initalize_weights()
+
+        
+    alpha = 0.00001
+    iterations = 50       
     momentum = 0.99
-    t = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, momentum, iterations)
-    t = load('weights.npy')
-    result = check_results(train_set[0],train_set[1],t)
-    print(str(result)+'%')
-    result = check_results(test_set[0],test_set[1],t)
-    print(str(result)+'%')
+    frequency = 1
+ 
+    results = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, \
+        momentum, iterations, frequency, False)  
+    
+
+    plt.plot(results[0], results[2], 'b', results[0], results[1], 'g')
+    plt.xlabel('Iterations')
+    plt.ylabel('Test Set Accuracy %')
+    plt.show()
+
+    return results
+
+def part6():
+    w = np.load('weights.npy')
+    x = np.load('test_setx.npy')
+    y = np.load('test_sety.npy')
+
+
+    #gd_traj = [(init_w1, init_w2), (step1_w1, step1_w2), ...]
+    #mo_traj = [(init_w1, init_w2), (step1_w1, step1_w2), ...]
+    w1s = np.arange(-0, 1, 0.1)
+    w2s = np.arange(-0, 1, 0.1)
+    w1z, w2z = np.meshgrid(w1s, w2s)
+    C = np.zeros([w1s.size, w2s.size])
+    D = np.zeros([w1s.size, w2s.size])
+    k = 0
+    for i, w1 in enumerate(w1s):
+        for j, w2 in enumerate(w2s):
+            print(str(i) + ':' + str(w1) + ' ' + str(w2))
+            #w[2][625] = w1
+            w[2][596] = w2
+            p = network_compute(x,w)
+            print('grad' +str(df(x,y,p)[596][2]))
+            C[j,i] = f(x,y,w)
+            #C[i,j] = k
+            k += 1
+
+    #C = C - C.mean()
+    #A = np.array([[1,2,3],[4,5,6],[7,8,9]])
+    #np.save('test.npy', C)
+    #C = np.zeros([w1s.size, w2s.size])
+    #C[1,1] =
+    print(C)
+    #CS = plt.contour(w1z, w2z, C, camp=cm.coolwarm)
+    #plt.plot([a for a, b in gd_traj], [b for a,b in gd_traj], 'yo-', label="No Momentum")
+    #plt.plot([a for a, b in mo_traj], [b for a,b in mo_traj], 'go-', label="Momentum")
+    #return 0
+    plt.contour(C)
+    plt.xlim( (0, 3) )
+    plt.ylim( (0, 3) )
+    #plt.legend(loc='top left')
+    plt.title('Contour plot')
+    plt.show()
+    
+        
+
+    
+    
+
+
 
 ############### RUNNING EACH PART ###############
 #part1()
+#os.remove("weights.npy")
 #part4()
-part5()
+#part4visualize()
+#part5()
+part6()
+
+'''
+C = np.load('weights.npy')
+i = 2
+for j in range(len (C[2])):
+    print('number' + str(j) + ':' + str(C[i][j]))
+'''
+
 
 
 

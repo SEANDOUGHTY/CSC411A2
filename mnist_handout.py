@@ -25,12 +25,12 @@ M = loadmat("mnist_all.mat")
 
 def make_set(M, typ, size=-1):
     load = load_set(typ)
-    if len(load) == 2:
-        print('Loading ' + typ + ' Set from Memory')
+    if len(load) == 2: # check if the set is already downloaded and saved
+        print('Loading ' + typ + ' Set from Memory.')
         return load
 
-    new_setx = np.zeros(shape=(1,785)) #784 pixels + a 1 for the bias
-    new_sety = np.zeros(shape=(1,10)) #10 possible out puts
+    new_setx = np.zeros(shape=(1,785)) # 784 pixels + a 1 for the bias
+    new_sety = np.zeros(shape=(1,10)) # 10 possible out puts
     arraysize = copy.deepcopy(size)
 
     for key in M:
@@ -41,12 +41,12 @@ def make_set(M, typ, size=-1):
         if size == -1: #if no size parameter then use the full training set
             arraysize = len(M[key])-1        
 
-        print('Making ' + typ + ' set:' + str(key))    
+        print('Making ' + typ + ' set: ' + str(key) + '.')    
         number = int(key[-1])
         for i in range(arraysize):
             num_matrix = M[key][i].reshape((28,28)) # reshape the (174,) vector to a (28,28) matrix
             num_matrix = num_matrix/255.0
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 print(str(float(i)/float(arraysize)*100) + '%')
 
             k = 0
@@ -65,8 +65,9 @@ def make_set(M, typ, size=-1):
     new_sety = new_sety[:-1]
     np.save((typ+'_setx'), new_setx)
     np.save((typ+'_sety'), new_sety)
+    print(new_setx.shape)
+    print(new_sety.shape)
     return [new_setx,new_sety]
-
 
 def load_set(typ):
     train_set = []
@@ -97,8 +98,9 @@ def f(x,y,w):
 
 
 def df(x,y,p):
-    #formula x(p-y)
+    #formula: x(p-y)
     return np.dot(x.transpose(), np.subtract(p.transpose(),y))
+
 
 def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=500, interupts=True):
     EPS = 1e-5   #EPS = 10**(-5)
@@ -109,7 +111,7 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=5
     itercount = np.array([])
     prev_t = init_t-10*EPS
     t = init_t.copy()
-    max_iter = iterations 
+    max_iter = iterations
     iter  = 0
     last_grad = 0
 
@@ -118,10 +120,10 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=5
         prev_t = t.copy()
 
         p = network_compute(x,t)
+
         grad = (alpha*df(x, y, p)).transpose()
         t -= gamma*last_grad + grad
         last_grad = grad
-
 
         if iter % frequency == 0:
             print "Iter", iter
@@ -133,6 +135,7 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=5
             print ("Training: " + str(trainresults) + "%")
             print ("Testing: " + str(testresults) + "%")
 
+
             if interupts:
                 name = raw_input("Continue")
                 if name == "N":
@@ -142,16 +145,15 @@ def grad_descent(df, x, y, x1, y1, init_t, alpha, gamma, iterations, frequency=5
     return [itertrack, traintrack, testtrack]
 
 
-def check_results(x,y,w):
+def check_results(x,y,t):
     '''This is a function that takes in a set of images, their result and the weights
     and calculates the accuracy of the network
     '''
-    p = network_compute(x,w)
+    p = network_compute(x,t)
     correct = 0
     incorrect = 0
     
     for i in range(y.shape[0]):
-        y[i][:]
         if np.argmax(y[i][:]) == np.argmax(p.transpose()[i]): #checking which images get choses correctly
             correct += 1
             continue
@@ -160,7 +162,6 @@ def check_results(x,y,w):
     if (incorrect + correct) == 0:
         return 0
     return float(correct)/float((incorrect+correct))*100
-
 
 def download_num_imgs(M):
 
@@ -196,14 +197,10 @@ def display_imgs(num_imgs, num_in_img):
     ax3.set_title('10 Example Images of Number {} in the Dataset\n'.format(num_in_img))
     plt.show()
 
-
 def network_compute(x,w):
     o = np.dot(w,x.transpose())
     p = softmax(o)
-    #p = tanh(dot(w,x.transpose()))
     return p
-
-
 
 def softmax(y):
     '''Return the output of the softmax function for the matrix of output y. y
@@ -265,6 +262,10 @@ def part1():
     download_num_imgs(M)
 
 def part4():
+    print("____________________________________________________________")
+    print "PART4: TRAINING NETWORK (WITHOUT MOMENTUM)"
+    print("____________________________________________________________")
+
     train_set = make_set(M, 'train') #building the training and test sets
     test_set = make_set(M, 'test')
     w = initalize_weights()
@@ -298,13 +299,16 @@ def part4visualize():
         i += 1
 
 def part5():
+    print("____________________________________________________________")
+    print "PART5: TRAINING NETWORK (WITH MOMENTUM)"
+    print("____________________________________________________________")
     train_set = make_set(M, 'train') #building the training and test sets
     test_set = make_set(M, 'test')
     w = initalize_weights()
 
         
     alpha = 0.00001
-    iterations = 50       
+    iterations = 100000        
     momentum = 0.99
     frequency = 1
  

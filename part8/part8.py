@@ -53,12 +53,12 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
     else:
         return it.result
 
-def resize_images(folder):
+def resize_images(folder, dim):
     for file in os.listdir(folder):
         # fillename = str(file)
         if file != '.DS_Store':
             small_res_matrix = imread(folder + file)
-            large_res_matrix = imresize(small_res_matrix, (64,64))
+            large_res_matrix = imresize(small_res_matrix, (dim,dim))
             mpimg.imsave("cropped_rgb_64/"+file, large_res_matrix) # save the image in another folder
 
 def download_jpgs_from_txt(file):
@@ -483,14 +483,14 @@ def compare_lr_performance(train_x,train_y,val_x,val_y,test_x,test_y):
 ################################################################################################
 def part8a():
     print("_________________________________________________________")
-    print("PART1: DOWNLOADING JPGS FROM TEXT (NO OUTPUT)")
+    print("PART8a: DOWNLOADING JPGS FROM TEXT (NO OUTPUT)")
     print("_________________________________________________________")
     # download_jpgs_from_txt("subset_actors.txt")
-    resize_images("cropped_rgb/")
+    resize_images("cropped_rgb/",64)
 
 def part8b():
     print("_________________________________________________________")
-    print("PART2: PARTIONIONING ACTORS INFO INTO SETS (NO OUTPUT)")
+    print("PART8b: BUILDING AND TRAINING A NEURAL NETWORK")
     print("_________________________________________________________")
     actors = ["Bracco", "Gilpin", "Harmon", "Baldwin", "Hader", "Carell"]
 
@@ -505,7 +505,7 @@ def part8b():
     train_x, train_y = get_x_and_y_data(training_set,folder)
     test_x, test_y = get_x_and_y_data(test_set,folder)
     val_x, val_y = get_x_and_y_data(validation_set,folder)
-
+    print(train_x.shape, train_y.shape)
     # DEFINE ARCHITECTURE PARAMETERS OF NETWORK
     dim_x = 32*32 + 1 
     dim_h = 45	# 38 is also good
@@ -517,7 +517,7 @@ def part8b():
     model.apply(init_weights)
     torch.manual_seed(0)
     # torch.manual_seed_all(0)
-    
+
     # DEFINE A LOSS FUNCTION
     loss_fn = torch.nn.CrossEntropyLoss()
 
@@ -542,7 +542,6 @@ def part8b():
     torch.save(model, "model.pth") 
 
 def part9():
-
     # LOAD THE MODEL TRAINED IN PART8b
     model = torch.load('model.pth')
 
@@ -553,24 +552,18 @@ def part9():
     model_array = model[0].weight.data.numpy()
     model_array = model_array[:,:-1]
     model_array_out = model[2].weight.data.numpy()
-
     for unit in range(0,45):
-        index = 2
-        label = "Harmon"
+        index = 2 # 4
+        label = "Harmon" # "Baldwin"
+        print(model_array_out[:,unit].shape)
         if argmax(model_array_out[:,unit]) == 2:
             model_unit_weights = model_array[unit, :]
+            print(model_unit_weights.shape)
             plt.imshow(model_unit_weights.reshape((32, 32)), cmap=plt.cm.coolwarm) # CHANGED THIS FROM 28,28
             plt.title('Hidden unit #{} associated with {}'.format(unit,label))
             plt.show()
 
-    # # PLOT THE WEIGHTS ASSOCIATED WITH UNIT 10
-    # model_unit_weights = model_array[unit, :]
-    # plt.imshow(model_unit_weights.reshape((32, 32)), cmap=plt.cm.coolwarm) # CHANGED THIS FROM 28,28
-    # plt.title('Hidden unit #{}'.format(unit))
-    # plt.show()
-
     # UNITS WITH FACES: 3, 4, 6, 7, 13, 16, 19, 20, 21, 25, 27 (Baldwin), 28, 31, 33, 34, 40, 41, 42
-
 
     # PLOT THE WEIGHTS ASSOCIATED WITH UNIT 20
     # model_unit_weights = model_array[20, :]

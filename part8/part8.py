@@ -349,12 +349,12 @@ def part2():
     loss_fn = torch.nn.CrossEntropyLoss()
 
     # TRAIN THE MODEL USING ADAM, A VARIANT OF GRADIENT DESCENT
-    learning_rate = 0.01 #1e-2
+    learning_rate = 0.00001 #1e-2
 
     # CHOOSE AN OPTIMIZER
     # optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    iterations = 10000
+    iterations = 100000
 
     loss_data = [[],[]]
     for t in range(iterations): # MIGHT NEED TO CHANGE THIS FROM 1000 to 120 (10000 originally)

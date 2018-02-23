@@ -316,6 +316,7 @@ def train_and_test(model,train_x,train_y,val_x,val_y,test_x,test_y,batch_size=45
     # DEFINE A LOSS FUNCTION
     loss_fn = torch.nn.CrossEntropyLoss()
 
+
     # CHOOSE AN OPTIMIZER
     # optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate, momentum=0.9)
 

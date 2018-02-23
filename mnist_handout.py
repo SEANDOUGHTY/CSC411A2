@@ -361,9 +361,9 @@ def part6():
 
     gd_traj = [(-3, 3)]
     mo_traj = [(-3, 3)]
-    alpha_gd = 0.2
+    alpha_gd = 0.1
     alpha_mo = 0.1
-    gamma = 0.1
+    gamma = 0.3
     last_grad = 0
     for i in range(10):
         w[2][item] = gd_traj[-1][0]

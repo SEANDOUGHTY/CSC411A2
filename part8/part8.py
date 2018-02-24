@@ -506,7 +506,7 @@ def part8b():
     train_x, train_y = get_x_and_y_data(training_set,folder)
     test_x, test_y = get_x_and_y_data(test_set,folder)
     val_x, val_y = get_x_and_y_data(validation_set,folder)
-    print(train_x.shape, train_y.shape)
+
     # DEFINE ARCHITECTURE PARAMETERS OF NETWORK
     dim_x = 32*32 + 1 
     dim_h = 45	# 38 is also good

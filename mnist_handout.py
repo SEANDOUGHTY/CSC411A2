@@ -87,12 +87,18 @@ def initalize_weights():
 
 def f(x,y,p):
     logp = np.log(p)
-
     cost = np.dot(y,logp)
-
     cost = -np.trace(cost)
-    #print(cost)
     return cost
+
+def df_test(x,y,w,i,j,h):
+    p = network_compute(x,w)
+    cost1 = f(x,y,p)
+
+    w[j][i] += h
+    p = network_compute(x,w)
+    cost2 = f(x,y,p)
+    return (cost2-cost1)/h
 
 
 def df(x,y,p):
@@ -265,6 +271,21 @@ def part1():
     print("____________________________________________________________")
     download_num_imgs(M)
 
+def part3():
+    test_set = make_set(M, 'test')
+    w = initalize_weights()
+    p = network_compute(test_set[0],w)
+    
+    grad1 = df(test_set[0],test_set[1],p)
+
+
+    i = 400
+    j = 3
+    h = 0.00001
+    print('Gradient Function:' + str(grad1[i][j]))
+    grad2 = df_test(test_set[0],test_set[1],w,i,j,h)
+    print('Finite Differences' + str(grad2))
+
 def part4():
     print("____________________________________________________________")
     print "PART4: TRAINING NETWORK (WITHOUT MOMENTUM)"
@@ -278,7 +299,7 @@ def part4():
     alpha = 0.00001
     iterations = 100000       
     momentum = 0
-    frequency = 1000
+    frequency = 100
  
     results = grad_descent(df, train_set[0], train_set[1], test_set[0], test_set[1], w, alpha, \
         momentum, iterations, frequency, True)  
@@ -401,10 +422,11 @@ def part6():
 ############### RUNNING EACH PART ###############
 #part1()
 #os.remove("weights.npy")
+part3()
 #part4()
 #part4visualize()
 #part5()
-part6()
+#part6()
 
 
 
